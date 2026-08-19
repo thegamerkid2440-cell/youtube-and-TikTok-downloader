@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Media Downloader</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #0b0b0f;
+      color: white;
+      display: flex;
+      justify-content: center;
+      padding: 30px 15px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 650px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #999;
+      margin-bottom: 25px;
+    }
+
+    .tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 14px;
+      border: 0;
+      border-radius: 12px;
+      background: #1a1a22;
+      color: white;
+      cursor: pointer;
+      font-size: 15px;
+    }
+
+    .tab.active {
+      background: #fff;
+      color: #000;
+    }
+
+    .card {
+      background: #15151c;
+      border-radius: 18px;
+      padding: 22px;
+    }
+
+    input {
+      width: 100%;
+      padding: 16px;
+      border: 1px solid #333;
+      border-radius: 12px;
+      background: #0d0d12;
+      color: white;
+      outline: none;
+      font-size: 15px;
+    }
+
+    .options {
+      margin-top: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #bbb;
+    }
+
+    select {
+      width: 100%;
+      padding: 14px;
+      border-radius: 10px;
+      border: 1px solid #333;
+      background: #0d0d12;
+      color: white;
+      font-size: 15px;
+    }
+
+    .download {
+      width: 100%;
+      margin-top: 20px;
+      padding: 16px;
+      border: 0;
+      border-radius: 12px;
+      background: #fff;
+      color: #000;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .download:hover {
+      opacity: .85;
+    }
+
+    .status {
+      margin-top: 18px;
+      padding: 14px;
+      border-radius: 10px;
+      background: #0d0d12;
+      color: #aaa;
+      display: none;
+    }
+
+    .info {
+      margin-top: 20px;
+      color: #777;
+      font-size: 13px;
+      line-height: 1.5;
+    }
+  </style>
+</head>
+
+<body>
+
+<div class="container">
+
+  <h1>Media Downloader</h1>
+  <div class="subtitle">YouTube • TikTok • Spotify</div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="setPlatform('youtube', this)">
+      YouTube
+    </button>
+
+    <button class="tab" onclick="setPlatform('tiktok', this)">
+      TikTok
+    </button>
+
+    <button class="tab" onclick="setPlatform('spotify', this)">
+      Spotify
+    </button>
+  </div>
+
+  <div class="card">
+
+    <input
+      id="url"
+      type="url"
+      placeholder="Paste a link here..."
+    >
+
+    <div class="options">
+
+      <label>Download type / quality</label>
+
+      <select id="quality">
+        <!-- Options are changed by JavaScript -->
+      </select>
+
+    </div>
+
+    <button class="download" onclick="downloadMedia()">
+      Download
+    </button>
+
+    <div id="status" class="status"></div>
+
+    <div class="info">
+      Only download media that you have permission to download or that
+      the service explicitly allows you to save.
+    </div>
+
+  </div>
+</div>
+
+<script>
+
+let platform = "youtube";
+
+const quality = document.getElementById("quality");
+
+function setPlatform(name, button) {
+
+  platform = name;
+
+  document.querySelectorAll(".tab").forEach(tab => {
+    tab.classList.remove("active");
+  });
+
+  button.classList.add("active");
+
+  updateOptions();
+
+  document.getElementById("url").value = "";
+
+  document.getElementById("status").style.display = "none";
+}
+
+function updateOptions() {
+
+  quality.innerHTML = "";
+
+  if (platform === "youtube") {
+
+    addOption("1080p Video", "1080");
+    addOption("720p Video", "720");
+    addOption("480p Video", "480");
+    addOption("360p Video", "360");
+    addOption("Audio", "audio");
+
+  }
+
+  else if (platform === "tiktok") {
+
+    addOption("Video", "video");
+    addOption("Audio", "audio");
+
+  }
+
+  else if (platform === "spotify") {
+
+    addOption("Audio", "audio");
+
+  }
+}
+
+function addOption(text, value) {
+
+  const option = document.createElement("option");
+
+  option.textContent = text;
+  option.value = value;
+
+  quality.appendChild(option);
+}
+
+async function downloadMedia() {
+
+  const url = document.getElementById("url").value.trim();
+  const selectedQuality = quality.value;
+  const status = document.getElementById("status");
+
+  if (!url) {
+    showStatus("Paste a link first.");
+    return;
+  }
+
+  showStatus("Preparing download...");
+
+  /*
+    Replace this URL with YOUR backend API.
+
+    Example:
+
+    https://your-server.com/api/download
+  */
+
+  try {
+
+    const response = await fetch("/api/download", {
+
+      method: "POST",
+
+      headers: {
+        "Content-Type": "application/json"
+      },
+
+      body: JSON.stringify({
+        platform: platform,
+        url: url,
+        quality: selectedQuality
+      })
+
+    });
+
+    if (!response.ok) {
+      throw new Error("Download server error");
+    }
+
+    const data = await response.json();
+
+    if (data.downloadUrl) {
+
+      window.location.href = data.downloadUrl;
+
+      showStatus("Download ready!");
+
+    } else {
+
+      showStatus("The server did not return a download.");
+
+    }
+
+  } catch (error) {
+
+    showStatus(
+      "The downloader server isn't connected yet."
+    );
+
+    console.log(error);
+
+  }
+}
+
+function showStatus(message) {
+
+  const status = document.getElementById("status");
+
+  status.textContent = message;
+  status.style.display = "block";
+}
+
+updateOptions();
+
+</script>
+
+</body>
+</html>
